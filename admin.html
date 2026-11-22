@@ -1,0 +1,297 @@
+\<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Box Builder Admin</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap">
+<style>
+:root{--bg:#EEF2F1;--ink:#12302A;--mute:#5B6F6A;--kraft:#BE8A52;--line:#D5DEDB;--ok:#1F7A55;--bad:#B3261E;
+font-family:'Bricolage Grotesque',system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);line-height:1.45}
+.wrap{max-width:1180px;margin:auto;padding:16px 16px 60px}
+header{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px}
+header b{font-size:20px;font-weight:800;letter-spacing:-.02em}
+.card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px}
+.login{max-width:360px;margin:12vh auto}
+input,select,textarea{font:inherit;padding:9px 10px;border:1.5px solid var(--line);border-radius:9px;background:#fff;color:inherit;width:100%}
+textarea{resize:vertical;min-height:40px}
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible{outline:3px solid var(--kraft);outline-offset:1px}
+.btn{border:0;border-radius:10px;padding:10px 16px;font:inherit;font-weight:600;cursor:pointer;background:var(--ink);color:#fff}
+.btn.s{background:#fff;color:var(--ink);border:1.5px solid var(--line)}
+.btn.d{background:#fff;color:var(--bad);border:1.5px solid var(--line);padding:8px 12px}
+.btn:disabled{opacity:.5}
+.tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+.tabs button{border:1.5px solid var(--line);background:#fff;border-radius:999px;padding:8px 16px;font:inherit;cursor:pointer}
+.tabs button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.stats{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.stat{background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 16px;min-width:110px}
+.stat b{display:block;font-size:24px;line-height:1.1}.stat span{font-size:13px;color:var(--mute)}
+.tools{display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.tools input{max-width:260px}.tools select{max-width:170px}
+.scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:14px;min-width:760px}
+th,td{padding:9px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{font-size:13px;color:var(--mute);font-weight:600;white-space:nowrap}
+td select{padding:6px 8px;width:auto}
+a{color:var(--ok);font-weight:600}
+.st-New{background:#FFF4D6}.st-Contacted{background:#DCEBFA}.st-Closed{background:#DDF1E6}
+.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
+.grid label{font-weight:600;font-size:14px;display:block;margin-bottom:3px}
+.grid small{display:block;color:var(--mute);font-size:12px;margin-top:2px}
+.hidden{display:none!important}
+.msg{color:var(--bad);font-size:14px;min-height:20px;margin-top:8px}
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 18px;border-radius:10px;font-size:14px;z-index:9}
+.empty{padding:30px;text-align:center;color:var(--mute)}
+.bar{display:flex;gap:10px;margin-top:16px;align-items:center;flex-wrap:wrap}
+.note{font-size:13px;color:var(--mute)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- LOGIN -->
+<div id="loginView" class="card login">
+  <h2 style="margin:0 0 4px">Admin login</h2>
+  <p class="note" style="margin:0 0 14px">Enter the admin password to see leads and edit rates.</p>
+  <input type="password" id="pw" placeholder="Password" autocomplete="current-password">
+  <div class="msg" id="loginMsg"></div>
+  <button class="btn" id="loginBtn" style="width:100%;margin-top:6px">Log in</button>
+</div>
+
+<!-- APP -->
+<div id="appView" class="hidden">
+  <header><b>Box Builder Admin</b><button class="btn s" id="logout">Log out</button></header>
+  <div class="tabs" id="tabs">
+    <button data-t="leads" class="on">Leads</button>
+    <button data-t="rates">Rates</button>
+    <button data-t="offer">Festival offer</button>
+    <button data-t="slabs">Quantity discounts</button>
+    <button data-t="rules">Product rules</button>
+  </div>
+
+  <section id="t-leads">
+    <div class="stats" id="stats"></div>
+    <div class="tools">
+      <input type="text" id="q" placeholder="Search name, phone, ref, brand">
+      <select id="fstatus"><option value="">All statuses</option><option>New</option><option>Contacted</option><option>Closed</option></select>
+      <button class="btn s" id="refresh">Refresh</button>
+    </div>
+    <div class="card scroll"><table id="leadTable"></table></div>
+  </section>
+
+  <section id="t-rates" class="hidden">
+    <div class="card">
+      <div class="grid" id="ratesForm"></div>
+      <h3 style="margin:22px 0 2px">Box styles</h3>
+      <p class="note" style="margin:0 0 12px">How much board each style uses compared with a straight box. 1.2 means 20% more board, 0.9 means 10% less.</p>
+      <div class="grid" id="styleForm"></div>
+      <h3 style="margin:22px 0 2px">Standard sizes (ready dies)</h3>
+      <p class="note" style="margin:0 0 12px">When a customer picks a size close to one of these, the website suggests it and shows the saving, because there is no new die cost.</p>
+      <div class="grid" id="sizeForm"></div>
+      <div class="bar"><button class="btn" id="saveRates">Save rates</button><span class="note">Changes show on the website immediately.</span></div>
+    </div>
+  </section>
+
+  <section id="t-offer" class="hidden">
+    <div class="card">
+      <h3 style="margin:0 0 4px">Festival offer</h3>
+      <p class="note" style="margin:0 0 14px">Shows a banner at the top of the website and gives every customer an extra discount on top of quantity discounts. Set an end date and it switches off by itself.</p>
+      <div class="grid" id="offerForm"></div>
+      <div class="bar"><button class="btn" id="saveOffer">Save offer</button><span class="note">Changes show on the website immediately.</span></div>
+    </div>
+  </section>
+
+  <section id="t-slabs" class="hidden">
+    <div class="card">
+      <p class="note" style="margin-top:0">Customers get the discount of the highest slab they reach. Example: 500 boxes and 8% means 8% off from 500 boxes onwards.</p>
+      <div class="scroll"><table id="slabTable" style="min-width:420px"></table></div>
+      <div class="bar"><button class="btn s" id="addSlab">Add slab</button><button class="btn" id="saveSlabs">Save discounts</button></div>
+    </div>
+  </section>
+
+  <section id="t-rules" class="hidden">
+    <div class="card">
+      <p class="note" style="margin-top:0">Decides which board and protection each product category gets. Strength and eco score go from 1 to 10.</p>
+      <div class="scroll"><table id="ruleTable" style="min-width:900px"></table></div>
+      <div class="bar"><button class="btn s" id="addRule">Add category</button><button class="btn" id="saveRules">Save rules</button></div>
+    </div>
+  </section>
+</div>
+</div>
+<div class="toast hidden" id="toast"></div>
+
+<script>
+/* ====== SETTINGS: same Apps Script Web App URL as index.html ====== */
+const API_URL = "https://script.google.com/macros/s/AKfycbyd0I7YZz5nCjru39lCzJTGJ-Nb8B5-ZP8Wcy01oDEA_l1erRzkpomU2wds80EqnJK-kw/exec";
+
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const inr=n=>"₹"+Number(n||0).toLocaleString("en-IN",{maximumFractionDigits:2});
+let PW="", cfg=null, leads=[];
+
+const EXTRA={style_mailer_factor:1.2,style_tuck_factor:1.1,style_sleeve_factor:0.9,style_pizza_factor:1.05,offer_active:0,offer_text:"",offer_discount_pct:0,offer_ends:0,standard_sizes:"20x15x10, 25x20x10, 30x20x15, 35x25x20, 40x30x25, 50x40x30",standard_tolerance_cm:3,die_cost_custom:1200};
+const RATE_LABELS={
+ board_rate_3:["3-layer board rate","₹ per sq.ft"],board_rate_5:["5-layer board rate","₹ per sq.ft"],board_rate_7:["7-layer board rate","₹ per sq.ft"],
+ wastage_pct:["Wastage","percent, e.g. 8"],margin_pct:["Profit margin","percent, e.g. 20"],printing_per_unit:["Printing per box","₹ per box"],
+ plate_setup_cost:["Printing plate / setup cost","₹, one-time per order"],finish_kraft:["Kraft finish extra","₹ per box"],finish_black:["Matte Black finish extra","₹ per box"],
+ finish_white:["Gloss White finish extra","₹ per box"],insert_none:["No insert","₹ per box"],insert_basic:["Basic insert","₹ per box"],
+ insert_divider:["Divider insert","₹ per box"],insert_foam:["Foam insert","₹ per box"],
+ style_mailer_factor:["Mailer box","board factor"],style_tuck_factor:["Tuck-top box","board factor"],style_sleeve_factor:["Sleeve box","board factor"],style_pizza_factor:["Pizza box","board factor"],
+ offer_active:["Offer status","On shows the banner and discount"],offer_text:["Banner message","Shown at the top of the website"],
+ offer_discount_pct:["Extra discount","percent, e.g. 5 means 5% off"],offer_ends:["Last day of offer","Leave empty to run until you switch it off"],
+ standard_sizes:["Ready die sizes (cm)","Length x Width x Height, separated by commas. Example: 30x20x15, 40x30x25"],
+ standard_tolerance_cm:["How close counts as nearby","cm on each side, e.g. 3"],die_cost_custom:["New die cost for custom sizes","Rs, one-time per order. Set 0 to turn this feature off"],
+ whatsapp_number:["WhatsApp number","with country code, no +, e.g. 919876543210"],min_qty:["Minimum order","boxes"]};
+
+async function api(body){
+  const r=await fetch(API_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({password:PW,...body})});
+  return r.json();
+}
+function toast(t){const e=$("toast");e.textContent=t;e.classList.remove("hidden");clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.add("hidden"),2200)}
+
+/* ---------- login ---------- */
+async function login(pw){
+  $("loginMsg").textContent="";$("loginBtn").disabled=true;
+  try{
+    if(API_URL.startsWith("PASTE")) throw new Error("Paste your Web App URL in admin.html first.");
+    PW=pw; const j=await api({action:"login"});
+    if(!j.ok) throw new Error(j.error||"Login failed");
+    sessionStorage.setItem("pk_pw",pw);
+    $("loginView").classList.add("hidden");$("appView").classList.remove("hidden");
+    await Promise.all([loadConfig(),loadLeads()]);
+  }catch(e){PW="";sessionStorage.removeItem("pk_pw");$("loginMsg").textContent=e.message||"Could not connect."}
+  $("loginBtn").disabled=false;
+}
+$("loginBtn").onclick=()=>login($("pw").value);
+$("pw").addEventListener("keydown",e=>{if(e.key==="Enter")login($("pw").value)});
+$("logout").onclick=()=>{sessionStorage.removeItem("pk_pw");location.reload()};
+
+/* ---------- tabs ---------- */
+$("tabs").onclick=e=>{
+  const t=e.target.dataset.t; if(!t) return;
+  [...$("tabs").children].forEach(b=>b.classList.toggle("on",b.dataset.t===t));
+  ["leads","rates","offer","slabs","rules"].forEach(x=>$("t-"+x).classList.toggle("hidden",x!==t));
+};
+
+/* ---------- leads ---------- */
+async function loadLeads(){
+  const j=await api({action:"leads"});
+  if(!j.ok){toast(j.error||"Could not load leads");return}
+  leads=j.leads.reverse(); renderLeads();
+}
+function renderLeads(){
+  const c={New:0,Contacted:0,Closed:0}; leads.forEach(l=>{if(c[l.Status]!==undefined)c[l.Status]++});
+  $("stats").innerHTML=`<div class="stat"><b>${leads.length}</b><span>Total leads</span></div>`+
+    ["New","Contacted","Closed"].map(s=>`<div class="stat st-${s}"><b>${c[s]}</b><span>${s}</span></div>`).join("");
+  const q=$("q").value.toLowerCase(), fs=$("fstatus").value;
+  const rows=leads.filter(l=>(!fs||l.Status===fs)&&(!q||[l.Ref,l.Name,l.Phone,l.Brand,l.Category].join(" ").toLowerCase().includes(q)));
+  if(!rows.length){$("leadTable").innerHTML=`<tr><td class="empty">No leads yet.</td></tr>`;return}
+  $("leadTable").innerHTML=`<tr><th>Ref</th><th>Date</th><th>Customer</th><th>Product</th><th>Size (cm)</th><th>Qty</th><th>Per box</th><th>Total</th><th>Status</th></tr>`+
+  rows.map(l=>{
+    const ph=String(l.Phone).replace(/\D/g,""), wa=ph.length===10?"91"+ph:ph;
+    const d=l.Date?new Date(l.Date).toLocaleString("en-IN",{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"}):"";
+    return `<tr><td>${esc(l.Ref)}</td><td>${d}</td>
+     <td><b>${esc(l.Name)}</b><br><a href="https://wa.me/${wa}" target="_blank" rel="noopener">${esc(ph)}</a>${l.Brand?`<br><span class="note">${esc(l.Brand)}</span>`:""}</td>
+     <td>${esc(l.Category)}<br><span class="note">${esc(l.Finish)}</span></td>
+     <td>${esc(l.L)}×${esc(l.W)}×${esc(l.H)}<br><span class="note">${esc(l.Weight)} kg</span></td>
+     <td>${esc(l.Qty)}</td><td>${inr(l.PricePerUnit)}</td><td>${inr(l.Total)}</td>
+     <td><select class="st-${esc(l.Status)}" data-ref="${esc(l.Ref)}">${["New","Contacted","Closed"].map(s=>`<option${s===l.Status?" selected":""}>${s}</option>`).join("")}</select></td></tr>`}).join("");
+}
+$("leadTable").addEventListener("change",async e=>{
+  const s=e.target; if(!s.dataset.ref) return;
+  const j=await api({action:"updateStatus",ref:s.dataset.ref,status:s.value});
+  if(j.ok){const l=leads.find(x=>x.Ref===s.dataset.ref);if(l)l.Status=s.value;renderLeads();toast("Status saved")}
+  else toast(j.error||"Could not save");
+});
+$("q").oninput=renderLeads;$("fstatus").onchange=renderLeads;
+$("refresh").onclick=async()=>{await loadLeads();toast("Updated")};
+
+/* ---------- config editors ---------- */
+async function loadConfig(){
+  const r=await fetch(API_URL); cfg=await r.json(); cfg.rates=Object.assign({},EXTRA,cfg.rates); cfg.slabs.sort((a,b)=>a.min_qty-b.min_qty);
+  renderRates();renderSlabs();renderRules();
+}
+function rateField([k,v]){
+  const [lab,hint]=RATE_LABELS[k]||[k,""],id=`id="r_${k}" data-k="${esc(k)}"`;
+  let inp;
+  if(k==="offer_active") inp=`<select ${id}><option value="1"${Number(v)?" selected":""}>On</option><option value="0"${Number(v)?"":" selected"}>Off</option></select>`;
+  else if(k==="offer_ends"){const s=String(v||"");inp=`<input type="date" ${id} value="${s.length===8?s.slice(0,4)+"-"+s.slice(4,6)+"-"+s.slice(6,8):""}">`}
+  else if(k==="offer_text") inp=`<input type="text" ${id} maxlength="90" value="${esc(v)}" placeholder="e.g. Diwali offer: 5% off on all boxes">`;
+  else if(k==="standard_sizes") inp=`<textarea ${id} rows="3">${esc(v)}</textarea>`;
+  else if(k==="whatsapp_number") inp=`<input ${id} value="${esc(v)}" inputmode="numeric">`;
+  else inp=`<input type="number" step="any" min="0" ${id} value="${esc(v)}">`;
+  return `<div><label for="r_${k}">${esc(lab)}</label>${inp}<small>${esc(hint)}</small></div>`;
+}
+function renderRates(){
+  const e=Object.entries(cfg.rates),st=k=>k.startsWith("style_"),of=k=>k.startsWith("offer_"),sz=k=>k.startsWith("standard_")||k==="die_cost_custom";
+  $("ratesForm").innerHTML=e.filter(([k])=>!st(k)&&!of(k)&&!sz(k)).map(rateField).join("");
+  $("styleForm").innerHTML=e.filter(([k])=>st(k)).map(rateField).join("");
+  $("sizeForm").innerHTML=e.filter(([k])=>sz(k)).map(rateField).join("");
+  $("offerForm").innerHTML=e.filter(([k])=>of(k)).map(rateField).join("");
+}
+async function saveTable(sheet,rows,btn){
+  btn.disabled=true;
+  try{const j=await api({action:"saveTable",sheet,rows});if(!j.ok)throw new Error(j.error);await loadConfig();toast("Saved. Website updated.")}
+  catch(e){toast("Could not save: "+(e.message||e))}
+  btn.disabled=false;
+}
+function collectRates(){
+  return [...document.querySelectorAll("#ratesForm [data-k],#styleForm [data-k],#sizeForm [data-k],#offerForm [data-k]")].map(i=>{
+    const k=i.dataset.k;let v=i.value;
+    if(k==="whatsapp_number") v=v.replace(/\D/g,"");
+    else if(k==="offer_text"||k==="standard_sizes") v=v.trim();
+    else if(k==="offer_ends") v=v?Number(v.replace(/-/g,"")):0;
+    else v=v===""?0:Number(v);
+    return{key:k,value:v};
+  });
+}
+$("saveRates").onclick=()=>saveTable("Rates",collectRates(),$("saveRates"));
+$("saveOffer").onclick=()=>{
+  const on=$("r_offer_active").value==="1",pct=Number($("r_offer_discount_pct").value)||0;
+  if(on&&!pct&&!$("r_offer_text").value.trim()){toast("Add a discount or a banner message");return}
+  saveTable("Rates",collectRates(),$("saveOffer"));
+};
+
+function renderSlabs(){
+  $("slabTable").innerHTML=`<tr><th>From quantity</th><th>Discount %</th><th></th></tr>`+cfg.slabs.map(s=>
+   `<tr><td><input type="number" min="1" value="${esc(s.min_qty)}"></td><td><input type="number" min="0" max="90" step="any" value="${esc(s.discount_pct)}"></td><td><button class="btn d" data-del>Remove</button></td></tr>`).join("");
+}
+$("addSlab").onclick=()=>{cfg.slabs=readSlabs();cfg.slabs.push({min_qty:"",discount_pct:0});renderSlabs()};
+function readSlabs(){return [...document.querySelectorAll("#slabTable tr")].slice(1).map(tr=>{const i=tr.querySelectorAll("input");return{min_qty:Number(i[0].value),discount_pct:Number(i[1].value)}})}
+$("slabTable").onclick=e=>{if(e.target.dataset.del!==undefined){e.target.closest("tr").remove()}};
+$("saveSlabs").onclick=()=>{
+  const rows=readSlabs().filter(s=>s.min_qty>0).sort((a,b)=>a.min_qty-b.min_qty);
+  if(!rows.length){toast("Add at least one slab");return}
+  saveTable("Slabs",rows,$("saveSlabs"));
+};
+
+const INSERTS=["none","basic","divider","foam"],PLYS=[3,5,7];
+function ruleRow(r){
+  return `<tr><td><input value="${esc(r.category)}" placeholder="id e.g. toys" style="min-width:90px"></td><td><input value="${esc(r.label)}" style="min-width:130px"></td>
+  <td><select>${PLYS.map(p=>`<option${p==r.ply?" selected":""}>${p}</option>`).join("")}</select></td>
+  <td><select>${INSERTS.map(p=>`<option${p===r.insert?" selected":""}>${p}</option>`).join("")}</select></td>
+  <td><input type="number" min="1" max="10" value="${esc(r.durability)}" style="width:70px"></td><td><input type="number" min="1" max="10" value="${esc(r.eco)}" style="width:70px"></td>
+  <td><textarea>${esc(r.why)}</textarea></td><td><button class="btn d" data-del>Remove</button></td></tr>`;
+}
+function renderRules(){
+  $("ruleTable").innerHTML=`<tr><th>ID</th><th>Name shown</th><th>Board layers</th><th>Insert</th><th>Strength</th><th>Eco</th><th>Why this box?</th><th></th></tr>`+cfg.rules.map(ruleRow).join("");
+}
+function readRules(){return [...document.querySelectorAll("#ruleTable tr")].slice(1).map(tr=>{
+  const i=tr.querySelectorAll("input"),s=tr.querySelectorAll("select");
+  return{category:i[0].value.trim().toLowerCase().replace(/[^a-z0-9_]/g,""),label:i[1].value.trim(),ply:Number(s[0].value),insert:s[1].value,durability:Number(i[2].value),eco:Number(i[3].value),why:tr.querySelector("textarea").value.trim()}})}
+$("addRule").onclick=()=>{cfg.rules=readRules();cfg.rules.push({category:"",label:"",ply:3,insert:"none",durability:5,eco:5,why:""});renderRules()};
+$("ruleTable").onclick=e=>{if(e.target.dataset.del!==undefined){e.target.closest("tr").remove()}};
+$("saveRules").onclick=()=>{
+  const rows=readRules();
+  if(!rows.length||rows.some(r=>!r.category||!r.label)){toast("Every row needs an ID and a name");return}
+  saveTable("Rules",rows,$("saveRules"));
+};
+
+/* auto-login within the same browser session */
+const saved=sessionStorage.getItem("pk_pw"); if(saved) login(saved);
+</script>
+</body>
+</html>
